@@ -6,9 +6,17 @@ $_['heading_title']    = '<a href="https://opencart3x.ru" target="_blank" title=
 // Text
 $_['text_feed']          = 'Каналы продвижения';
 $_['text_success']       = 'Настройки модуля обновлены!';
+$_['text_feed_url_after_save'] = 'Адрес появится после сохранения фида';
+
+// Column
+$_['column_name']        = 'Название фида';
+$_['column_status']      = 'Статус';
+$_['column_url']         = 'Адрес фида';
+$_['column_action']      = 'Действие';
 
 // Entry
 $_['entry_status']       = 'Статус:';
+$_['entry_name']         = 'Название фида:';
 $_['entry_data_feed']    = 'Адрес:';
 $_['entry_shopname']     = 'Магазин:';
 $_['entry_company']      = 'Компания:';
@@ -29,4 +37,6 @@ $_['entry_description']       = 'Описание с HTML-разметкой:';
 
 // Error
 $_['error_permission']   = 'У Вас нет доступа для управления модулем Экспорт в YML для Яндекс.Маркет!';
+$_['error_name']         = 'Название фида должно быть от 1 до 255 символов!';
+$_['error_categories']   = 'Выберите хотя бы одну категорию!';
 ?>

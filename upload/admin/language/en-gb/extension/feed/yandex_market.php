@@ -6,9 +6,17 @@ $_['heading_title']    = '<a href="https://opencart3x.ru" target="_blank" title=
 // Text
 $_['text_feed']          = 'Feed';
 $_['text_success']       = 'Success! Module data saved.';
+$_['text_feed_url_after_save'] = 'The URL will appear after the feed is saved';
+
+// Column
+$_['column_name']        = 'Feed name';
+$_['column_status']      = 'Status';
+$_['column_url']         = 'Feed URL';
+$_['column_action']      = 'Action';
 
 // Entry
 $_['entry_status']       = 'Status:';
+$_['entry_name']         = 'Feed name:';
 $_['entry_data_feed']    = 'Feed YML:';
 $_['entry_shopname']     = 'Store:';
 $_['entry_company']      = 'Company name:';
@@ -28,4 +36,6 @@ $_['entry_options']       = 'Options to param:';
 $_['entry_description']       = 'HTML Description:';
 // Error
 $_['error_permission']   = 'Permission Error!';
+$_['error_name']         = 'Feed name must be between 1 and 255 characters!';
+$_['error_categories']   = 'Select at least one category!';
 ?>

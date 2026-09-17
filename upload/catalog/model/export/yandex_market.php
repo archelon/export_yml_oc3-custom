@@ -1,5 +1,40 @@
 <?php
 class ModelExportYandexMarket extends Model {
+	public function installSchema() {
+		$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "feed_yandex_market` (
+			`feed_id` int(11) NOT NULL AUTO_INCREMENT,
+			`name` varchar(255) NOT NULL DEFAULT '',
+			`status` tinyint(1) NOT NULL DEFAULT '1',
+			`shopname` varchar(255) NOT NULL DEFAULT '',
+			`company` varchar(255) NOT NULL DEFAULT '',
+			`currency` varchar(3) NOT NULL DEFAULT 'RUB',
+			`in_stock` int(11) NOT NULL DEFAULT '7',
+			`out_of_stock` int(11) NOT NULL DEFAULT '5',
+			`image` tinyint(1) NOT NULL DEFAULT '1',
+			`image_size` tinyint(2) NOT NULL DEFAULT '1',
+			`sales_notes` varchar(255) NOT NULL DEFAULT '',
+			`attributes` tinyint(1) NOT NULL DEFAULT '0',
+			`options` tinyint(1) NOT NULL DEFAULT '0',
+			`description` tinyint(1) NOT NULL DEFAULT '0',
+			`categories` text NOT NULL,
+			`date_added` datetime NOT NULL,
+			`date_modified` datetime NOT NULL,
+			PRIMARY KEY (`feed_id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
+	}
+
+	public function getFeed($feed_id) {
+		$query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "feed_yandex_market` WHERE `feed_id` = '" . (int)$feed_id . "' AND `status` = '1'");
+
+		return $query->row;
+	}
+
+	public function getDefaultFeed() {
+		$query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "feed_yandex_market` WHERE `status` = '1' ORDER BY `feed_id` ASC LIMIT 1");
+
+		return $query->row;
+	}
+
 	public function getCategory() {
 		$query = $this->db->query("SELECT cd.name, c.category_id, c.parent_id FROM " . DB_PREFIX . "category c LEFT JOIN " . DB_PREFIX . "category_description cd ON (c.category_id = cd.category_id) LEFT JOIN " . DB_PREFIX . "category_to_store c2s ON (c.category_id = c2s.category_id) WHERE cd.language_id = '" . (int)$this->config->get('config_language_id') . "' AND c2s.store_id = '" . (int)$this->config->get('config_store_id') . "'  AND c.status = '1' AND c.sort_order <> '-1'");
 

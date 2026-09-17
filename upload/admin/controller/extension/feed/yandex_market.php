@@ -1,6 +1,5 @@
 <?php
 class ControllerExtensionFeedYandexMarket extends Controller {
-
 	private $error = array();
 
 	public function index() {
@@ -8,19 +7,169 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 
 		$this->document->setTitle($this->language->get('page_title'));
 
-		$this->load->model('setting/setting');
+		$this->load->model('export/yandex_market');
 
-		if (($this->request->server['REQUEST_METHOD'] == 'POST') && ($this->validate())) {
-			if (isset($this->request->post['feed_yandex_market_categories'])) {
-				$this->request->post['feed_yandex_market_categories'] = implode(',', $this->request->post['feed_yandex_market_categories']);
-			}
+		// Ленивая инициализация схемы: на случай деплоя поверх уже установленного
+		// расширения, когда install() не вызывается автоматически.
+		$this->model_export_yandex_market->installSchema();
+		$this->model_export_yandex_market->migrateLegacy();
+		$this->model_export_yandex_market->ensureModuleStatus();
 
-			$this->model_setting_setting->editSetting('feed_yandex_market', $this->request->post);
+		$this->getList();
+	}
+
+	public function add() {
+		$this->load->language('extension/feed/yandex_market');
+
+		$this->document->setTitle($this->language->get('page_title'));
+
+		$this->load->model('export/yandex_market');
+
+		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
+			$feed = $this->request->post['feed'];
+
+			$feed['categories'] = isset($feed['categories']) ? implode(',', $feed['categories']) : '';
+
+			$this->model_export_yandex_market->addFeed($feed);
 
 			$this->session->data['success'] = $this->language->get('text_success');
 
-			$this->response->redirect($this->url->link('marketplace/extension', 'user_token=' . $this->session->data['user_token'] . '&type=feed', true));
+			$this->response->redirect($this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true));
 		}
+
+		$this->getForm();
+	}
+
+	public function edit() {
+		$this->load->language('extension/feed/yandex_market');
+
+		$this->document->setTitle($this->language->get('page_title'));
+
+		$this->load->model('export/yandex_market');
+
+		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
+			$feed = $this->request->post['feed'];
+
+			$feed['categories'] = isset($feed['categories']) ? implode(',', $feed['categories']) : '';
+
+			$this->model_export_yandex_market->editFeed($this->request->get['feed_id'], $feed);
+
+			$this->session->data['success'] = $this->language->get('text_success');
+
+			$this->response->redirect($this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true));
+		}
+
+		$this->getForm();
+	}
+
+	public function copy() {
+		$this->load->language('extension/feed/yandex_market');
+
+		$this->load->model('export/yandex_market');
+
+		if (isset($this->request->post['selected']) && $this->validate()) {
+			foreach ($this->request->post['selected'] as $feed_id) {
+				$this->model_export_yandex_market->copyFeed($feed_id);
+			}
+
+			$this->session->data['success'] = $this->language->get('text_success');
+
+			$this->response->redirect($this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true));
+		}
+
+		$this->getList();
+	}
+
+	public function delete() {
+		$this->load->language('extension/feed/yandex_market');
+
+		$this->load->model('export/yandex_market');
+
+		if (isset($this->request->post['selected']) && $this->validate()) {
+			foreach ($this->request->post['selected'] as $feed_id) {
+				$this->model_export_yandex_market->deleteFeed($feed_id);
+			}
+
+			$this->session->data['success'] = $this->language->get('text_success');
+
+			$this->response->redirect($this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true));
+		}
+
+		$this->getList();
+	}
+
+	public function install() {
+		$this->load->model('export/yandex_market');
+
+		$this->model_export_yandex_market->installSchema();
+		$this->model_export_yandex_market->migrateLegacy();
+		$this->model_export_yandex_market->ensureModuleStatus();
+	}
+
+	public function uninstall() {
+		// Данные фидов намеренно сохраняются при удалении расширения.
+	}
+
+	protected function getList() {
+		if (isset($this->error['warning'])) {
+			$data['error_warning'] = $this->error['warning'];
+		} else {
+			$data['error_warning'] = '';
+		}
+
+		if (isset($this->session->data['success'])) {
+			$data['success'] = $this->session->data['success'];
+
+			unset($this->session->data['success']);
+		} else {
+			$data['success'] = '';
+		}
+
+		$data['breadcrumbs'] = array();
+
+		$data['breadcrumbs'][] = array(
+			'href'      => $this->url->link('common/dashboard', 'user_token=' . $this->session->data['user_token'], true),
+			'text'      => $this->language->get('text_home')
+		);
+
+		$data['breadcrumbs'][] = array(
+			'href'      => $this->url->link('marketplace/extension', 'user_token=' . $this->session->data['user_token'] . '&type=feed', true),
+			'text'      => $this->language->get('text_feed')
+		);
+
+		$data['breadcrumbs'][] = array(
+			'href'      => $this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true),
+			'text'      => $this->language->get('page_title')
+		);
+
+		$data['add'] = $this->url->link('extension/feed/yandex_market/add', 'user_token=' . $this->session->data['user_token'], true);
+		$data['delete'] = $this->url->link('extension/feed/yandex_market/delete', 'user_token=' . $this->session->data['user_token'], true);
+		$data['copy'] = $this->url->link('extension/feed/yandex_market/copy', 'user_token=' . $this->session->data['user_token'], true);
+
+		$data['selected'] = array();
+		$data['feeds'] = array();
+
+		$results = $this->model_export_yandex_market->getFeeds();
+
+		foreach ($results as $result) {
+			$data['feeds'][] = array(
+				'feed_id' => $result['feed_id'],
+				'name'    => $result['name'],
+				'status'  => $result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled'),
+				'url'     => HTTP_CATALOG . 'index.php?route=extension/feed/yandex_market&feed_id=' . $result['feed_id'],
+				'edit'    => $this->url->link('extension/feed/yandex_market/edit', 'user_token=' . $this->session->data['user_token'] . '&feed_id=' . $result['feed_id'], true)
+			);
+		}
+
+		$data['header'] = $this->load->controller('common/header');
+		$data['column_left'] = $this->load->controller('common/column_left');
+		$data['footer'] = $this->load->controller('common/footer');
+
+		$this->response->setOutput($this->load->view('extension/feed/yandex_market_list', $data));
+	}
+
+	protected function getForm() {
+		$this->model_export_yandex_market->installSchema();
 
 		if (isset($this->error['warning'])) {
 			$data['error_warning'] = $this->error['warning'];
@@ -28,154 +177,138 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			$data['error_warning'] = '';
 		}
 
+		if (isset($this->error['name'])) {
+			$data['error_name'] = $this->error['name'];
+		} else {
+			$data['error_name'] = '';
+		}
+
+		if (isset($this->error['categories'])) {
+			$data['error_categories'] = $this->error['categories'];
+		} else {
+			$data['error_categories'] = '';
+		}
+
 		$data['breadcrumbs'] = array();
 
 		$data['breadcrumbs'][] = array(
 			'href'      => $this->url->link('common/dashboard', 'user_token=' . $this->session->data['user_token'], true),
-			'text'      => $this->language->get('text_home'),
-			'separator' => FALSE
+			'text'      => $this->language->get('text_home')
 		);
 
 		$data['breadcrumbs'][] = array(
-			'href'      => $this->url->link('marketplace/extension', 'user_token=' . $this->session->data['user_token']. '&type=feed', true),
-			'text'      => $this->language->get('text_feed'),
-			'separator' => ' :: '
+			'href'      => $this->url->link('marketplace/extension', 'user_token=' . $this->session->data['user_token'] . '&type=feed', true),
+			'text'      => $this->language->get('text_feed')
 		);
 
 		$data['breadcrumbs'][] = array(
 			'href'      => $this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true),
-			'text'      => $this->language->get('page_title'),
-			'separator' => ' :: '
+			'text'      => $this->language->get('page_title')
 		);
 
-		$data['action'] = $this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true);
+		$feed_info = array();
 
-		$data['cancel'] = $this->url->link('marketplace/extension', 'user_token=' . $this->session->data['user_token'] . '&type=feed', true);
-
-		if (isset($this->request->post['feed_yandex_market_status'])) {
-			$data['feed_yandex_market_status'] = $this->request->post['feed_yandex_market_status'];
-		} else {
-			$data['feed_yandex_market_status'] = $this->config->get('feed_yandex_market_status');
+		if (isset($this->request->get['feed_id'])) {
+			$feed_info = $this->model_export_yandex_market->getFeed($this->request->get['feed_id']);
 		}
 
-		$data['data_feed'] = HTTP_CATALOG . 'index.php?route=extension/feed/yandex_market';
+		$defaults = array(
+			'name'          => '',
+			'status'        => 1,
+			'shopname'      => '',
+			'company'       => '',
+			'currency'      => $this->config->get('config_currency'),
+			'in_stock'      => 7,
+			'out_of_stock'  => 5,
+			'image'         => 1,
+			'image_size'    => 1,
+			'sales_notes'   => '',
+			'attributes'    => 0,
+			'options'       => 0,
+			'description'   => 0,
+			'categories'    => array()
+		);
 
-		if (isset($this->request->post['feed_yandex_market_shopname'])) {
-			$data['feed_yandex_market_shopname'] = $this->request->post['feed_yandex_market_shopname'];
-		} else {
-			$data['feed_yandex_market_shopname'] = $this->config->get('feed_yandex_market_shopname');
+		$data['feed'] = array();
+
+		foreach ($defaults as $key => $default) {
+			if (isset($this->request->post['feed'][$key])) {
+				$data['feed'][$key] = $this->request->post['feed'][$key];
+			} elseif (isset($feed_info[$key])) {
+				$data['feed'][$key] = $feed_info[$key];
+			} else {
+				$data['feed'][$key] = $default;
+			}
 		}
 
-		if (isset($this->request->post['feed_yandex_market_company'])) {
-			$data['feed_yandex_market_company'] = $this->request->post['feed_yandex_market_company'];
-		} else {
-			$data['feed_yandex_market_company'] = $this->config->get('feed_yandex_market_company');
+		if (!is_array($data['feed']['categories'])) {
+			$data['feed']['categories'] = ($data['feed']['categories'] != '') ? explode(',', $data['feed']['categories']) : array();
 		}
 
-		if (isset($this->request->post['feed_yandex_market_currency'])) {
-			$data['feed_yandex_market_currency'] = $this->request->post['feed_yandex_market_currency'];
+		$data['feed_id'] = isset($this->request->get['feed_id']) ? (int)$this->request->get['feed_id'] : 0;
+
+		if ($data['feed_id']) {
+			$data['action'] = $this->url->link('extension/feed/yandex_market/edit', 'user_token=' . $this->session->data['user_token'] . '&feed_id=' . $data['feed_id'], true);
+			$data['feed_url'] = HTTP_CATALOG . 'index.php?route=extension/feed/yandex_market&feed_id=' . $data['feed_id'];
 		} else {
-			$data['feed_yandex_market_currency'] = $this->config->get('feed_yandex_market_currency');
+			$data['action'] = $this->url->link('extension/feed/yandex_market/add', 'user_token=' . $this->session->data['user_token'], true);
+			$data['feed_url'] = '';
 		}
 
-		if (isset($this->request->post['feed_yandex_market_in_stock'])) {
-			$data['feed_yandex_market_in_stock'] = $this->request->post['feed_yandex_market_in_stock'];
-		} elseif ($this->config->get('feed_yandex_market_in_stock')) {
-			$data['feed_yandex_market_in_stock'] = $this->config->get('feed_yandex_market_in_stock');
-		} else {
-			$data['feed_yandex_market_in_stock'] = 7;
-		}
+		$data['cancel'] = $this->url->link('extension/feed/yandex_market', 'user_token=' . $this->session->data['user_token'], true);
 
-		if (isset($this->request->post['feed_yandex_market_out_of_stock'])) {
-			$data['feed_yandex_market_out_of_stock'] = $this->request->post['feed_yandex_market_out_of_stock'];
-		} elseif ($this->config->get('feed_yandex_market_in_stock')) {
-			$data['feed_yandex_market_out_of_stock'] = $this->config->get('feed_yandex_market_out_of_stock');
-		} else {
-			$data['feed_yandex_market_out_of_stock'] = 5;
-		}
-
-		if (isset($this->request->post['feed_yandex_market_image'])) {
-			$data['feed_yandex_market_image'] = $this->request->post['feed_yandex_market_image'];
-		} elseif ($this->config->get('feed_yandex_market_image')) {
-			$data['feed_yandex_market_image'] = $this->config->get('feed_yandex_market_image');
-		} else {
-			$data['feed_yandex_market_image'] = 1;
-		}
-
-		if (isset($this->request->post['feed_yandex_market_image_size'])) {
-			$data['feed_yandex_market_image_size'] = $this->request->post['feed_yandex_market_image_size'];
-		} elseif ($this->config->get('feed_yandex_market_image_size')) {
-			$data['feed_yandex_market_image_size'] = $this->config->get('feed_yandex_market_image_size');
-		} else {
-			$data['feed_yandex_market_image_size'] = 1;
-		}
-
-		if (isset($this->request->post['feed_yandex_market_sales_notes'])) {
-			$data['feed_yandex_market_sales_notes'] = $this->request->post['feed_yandex_market_sales_notes'];
-		} else {
-			$data['feed_yandex_market_sales_notes'] = $this->config->get('feed_yandex_market_sales_notes');
-		}
-
-		if (isset($this->request->post['feed_yandex_market_attributes'])) {
-			$data['feed_yandex_market_attributes'] = $this->request->post['feed_yandex_market_attributes'];
-		} else {
-			$data['feed_yandex_market_attributes'] = $this->config->get('feed_yandex_market_attributes');
-		}
-
-		if (isset($this->request->post['feed_yandex_market_options'])) {
-			$data['feed_yandex_market_options'] = $this->request->post['feed_yandex_market_options'];
-		} else {
-			$data['feed_yandex_market_options'] = $this->config->get('feed_yandex_market_options');
-		}
-
-		if (isset($this->request->post['feed_yandex_market_description'])) {
-			$data['feed_yandex_market_description'] = $this->request->post['feed_yandex_market_description'];
-		} else {
-			$data['feed_yandex_market_description'] = $this->config->get('feed_yandex_market_description');
-		}
-		
 		$this->load->model('localisation/stock_status');
 
 		$data['stock_statuses'] = $this->model_localisation_stock_status->getStockStatuses();
 
 		$this->load->model('catalog/category');
 
-		$filter_data = array(
-			'sort'  => 'name',
-			'order' => 'ASC'
-		);
-
-		$data['categories'] = $this->model_catalog_category->getCategories($filter_data);
-
-		if (isset($this->request->post['feed_yandex_market_categories'])) {
-			$data['feed_yandex_market_categories'] = $this->request->post['feed_yandex_market_categories'];
-		} elseif ($this->config->get('feed_yandex_market_categories') != '') {
-			$data['feed_yandex_market_categories'] = explode(',', $this->config->get('feed_yandex_market_categories'));
-		} else {
-			$data['feed_yandex_market_categories'] = array();
-		}
+		$data['categories'] = $this->model_catalog_category->getCategories();
 
 		$this->load->model('localisation/currency');
+
 		$currencies = $this->model_localisation_currency->getCurrencies();
+
 		$allowed_currencies = array_flip(array('RUR', 'RUB', 'BYR', 'BYN', 'KZT', 'UAH', 'USD', 'EUR'));
+
 		$data['currencies'] = array_intersect_key($currencies, $allowed_currencies);
-		
+
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
-		
+
 		$this->response->setOutput($this->load->view('extension/feed/yandex_market', $data));
 	}
 
-	private function validate() {
+	protected function validateForm() {
+		if (!$this->user->hasPermission('modify', 'extension/feed/yandex_market')) {
+			$this->error['warning'] = $this->language->get('error_permission');
+		}
+
+		if (!isset($this->request->post['feed']['name']) || (utf8_strlen($this->request->post['feed']['name']) < 1) || (utf8_strlen($this->request->post['feed']['name']) > 255)) {
+			$this->error['name'] = $this->language->get('error_name');
+		}
+
+		if (empty($this->request->post['feed']['categories'])) {
+			$this->error['categories'] = $this->language->get('error_categories');
+		}
+
+		if (!$this->error) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	protected function validate() {
 		if (!$this->user->hasPermission('modify', 'extension/feed/yandex_market')) {
 			$this->error['warning'] = $this->language->get('error_permission');
 		}
 
 		if (!$this->error) {
-			return TRUE;
+			return true;
 		} else {
-			return FALSE;
+			return false;
 		}
 	}
 }

@@ -4,25 +4,39 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 	private $currencies = array();
 	private $categories = array();
 	private $offers = array();
+	private $feed = array();
 	private $from_charset = 'utf-8';
 	private $eol = "\n";
 
 	public function index() {
-		if ($this->config->get('feed_yandex_market_status')) {
+		$feed_id = isset($this->request->get['feed_id']) ? (int)$this->request->get['feed_id'] : 0;
 
-			if (!($allowed_categories = $this->config->get('feed_yandex_market_categories'))) exit();
+		$this->load->model('export/yandex_market');
 
-			$this->load->model('export/yandex_market');
+		// Ленивая инициализация схемы при деплое поверх уже установленного расширения.
+		$this->model_export_yandex_market->installSchema();
+
+		if ($feed_id) {
+			$feed_info = $this->model_export_yandex_market->getFeed($feed_id);
+		} else {
+			$feed_info = $this->model_export_yandex_market->getDefaultFeed();
+		}
+
+		if ($feed_info) {
+			$this->feed = $feed_info;
+
+			if (!($allowed_categories = $feed_info['categories'])) exit();
+
 			$this->load->model('localisation/currency');
 			$this->load->model('tool/image');
 
 			// Магазин
-			$this->setShop('name', $this->config->get('feed_yandex_market_shopname'));
-			$this->setShop('company', $this->config->get('feed_yandex_market_company'));
+			$this->setShop('name', $feed_info['shopname']);
+			$this->setShop('company', $feed_info['company']);
 			$this->setShop('url', HTTP_SERVER);
 
 			// Валюты
-			$offers_currency = $this->config->get('feed_yandex_market_currency');
+			$offers_currency = $feed_info['currency'];
 			if (!$this->currency->has($offers_currency)) exit();
 
 			$decimal_place = $this->currency->getDecimalPlace($offers_currency);
@@ -54,8 +68,8 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			}
 
 			// Товарные предложения
-			$in_stock_id = $this->config->get('feed_yandex_market_in_stock'); // id статуса товара "В наличии"
-			$out_of_stock_id = $this->config->get('feed_yandex_market_out_of_stock'); // id статуса товара "Нет на складе"
+			$in_stock_id = $feed_info['in_stock']; // id статуса товара "В наличии"
+			$out_of_stock_id = $feed_info['out_of_stock']; // id статуса товара "Нет на складе"
 			$vendor_required = false; // true - только товары у которых задан производитель, необходимо для 'vendor.model' 
 			$products = $this->model_export_yandex_market->getProduct($allowed_categories, $out_of_stock_id, $vendor_required);
 			
@@ -80,8 +94,8 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 					$data['oldprice'] = number_format($this->currency->convert($this->tax->calculate($min_price, $product['tax_class_id']), $shop_currency, $offers_currency), $decimal_place, '.', '');
 					$data['price'] = number_format($this->currency->convert($this->tax->calculate($product['special'], $product['tax_class_id']), $shop_currency, $offers_currency), $decimal_place, '.', '');
 				}
-				if ($this->config->get('feed_yandex_market_sales_notes')) {
-					$data['sales_notes'] = $this->config->get('feed_yandex_market_sales_notes');
+				if ($feed_info['sales_notes']) {
+					$data['sales_notes'] = $feed_info['sales_notes'];
 				}
 				$data['currencyId'] = $offers_currency;
 				$data['categoryId'] = $product['category_id'];
@@ -98,22 +112,22 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 				$data['pictures'] = array();
 				if ($product['image']) {
 					$data['pictures'][]  = array( 
-						'picture' => ($this->config->get('feed_yandex_market_image_size') == 1) ? $this->model_tool_image->resize($product['image'], 600, 600) : HTTPS_SERVER.'image/'.$product['image']
+						'picture' => ($feed_info['image_size'] == 1) ? $this->model_tool_image->resize($product['image'], 600, 600) : HTTPS_SERVER.'image/'.$product['image']
 					);
 				}
-				if ($this->config->get('feed_yandex_market_image') == '2') {
+				if ($feed_info['image'] == '2') {
 					$images = $this->model_catalog_product->getProductImages($product['product_id']);
 					$i=1;
 					foreach ($images as $image) {
 						$data['pictures'][] = array(
-							'picture' => ($this->config->get('feed_yandex_market_image_size') == 1) ? $this->model_tool_image->resize($image['image'], 600, 600) : HTTPS_SERVER.'image/'.$image['image']
+							'picture' => ($feed_info['image_size'] == 1) ? $this->model_tool_image->resize($image['image'], 600, 600) : HTTPS_SERVER.'image/'.$image['image']
 						);
 						$i++;
 						if ($i>9) break;
 					}
 				}
 
-				if ($this->config->get('feed_yandex_market_attributes')) {
+				if ($feed_info['attributes']) {
 					$attribute_groups = $this->model_catalog_product->getProductAttributes($product['product_id']);
 					if ($attribute_groups) {
 						$data['param'] = array();
@@ -127,12 +141,12 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 		                }
 		          	}
 		        }
-	          	if ($this->config->get('feed_yandex_market_options')) {
+	          	if ($feed_info['options']) {
 		          	$options = $this->model_catalog_product->getProductOptions($product['product_id']);
 					if ($options) {
 						if(!isset($data['param'])) $data['param'] = array();
 						foreach ($options as $option) {
-							if ($option['type']=="radio"||$option['type']=="checkbox"||$option['type']="select") {
+							if (in_array($option['type'], array('radio', 'checkbox', 'select'))) {
 								foreach ($option['product_option_value'] as $option_value) {
 									if (!$option_value['subtract'] || ($option_value['quantity'] > 0)) {
 										$data['param'][] = array(
@@ -342,7 +356,7 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 		// Стандарт XML учитывает порядок следования элементов,
 		// поэтому важно соблюдать его в соответствии с порядком описанным в DTD
 		$offer['data'] = array();
-		$html_description = $this->config->get('feed_yandex_market_description');
+		$html_description = $this->feed['description'];
 		foreach ($allowed_tags as $key => $value) {
 			if ($key == 'description' && $html_description && $this->from_charset != 'windows-1251') {
 				$offer['data'][$key] = '<![CDATA['.$this->utf8_to_cp1251(htmlspecialchars_decode($data[$key])).']]>';
