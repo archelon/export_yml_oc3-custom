@@ -17,10 +17,18 @@ class ModelExportYandexMarket extends Model {
 			`options` tinyint(1) NOT NULL DEFAULT '0',
 			`description` tinyint(1) NOT NULL DEFAULT '0',
 			`categories` text NOT NULL,
+			`excluded_products` text NOT NULL,
 			`date_added` datetime NOT NULL,
 			`date_modified` datetime NOT NULL,
 			PRIMARY KEY (`feed_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
+
+		// Добавление колонки на уже существующую таблицу (деплой поверх установленного расширения).
+		$query = $this->db->query("SHOW COLUMNS FROM `" . DB_PREFIX . "feed_yandex_market` LIKE 'excluded_products'");
+
+		if (!$query->num_rows) {
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "feed_yandex_market` ADD `excluded_products` text NOT NULL AFTER `categories`");
+		}
 	}
 
 	public function migrateLegacy() {
@@ -105,6 +113,7 @@ class ModelExportYandexMarket extends Model {
 			`options` = '" . (isset($data['options']) ? (int)$data['options'] : 0) . "',
 			`description` = '" . (isset($data['description']) ? (int)$data['description'] : 0) . "',
 			`categories` = '" . $this->db->escape($data['categories']) . "',
+			`excluded_products` = '" . $this->db->escape(isset($data['excluded_products']) ? $data['excluded_products'] : '') . "',
 			`date_added` = NOW(),
 			`date_modified` = NOW()");
 
@@ -127,6 +136,7 @@ class ModelExportYandexMarket extends Model {
 			`options` = '" . (isset($data['options']) ? (int)$data['options'] : 0) . "',
 			`description` = '" . (isset($data['description']) ? (int)$data['description'] : 0) . "',
 			`categories` = '" . $this->db->escape($data['categories']) . "',
+			`excluded_products` = '" . $this->db->escape(isset($data['excluded_products']) ? $data['excluded_products'] : '') . "',
 			`date_modified` = NOW()
 			WHERE `feed_id` = '" . (int)$feed_id . "'");
 	}

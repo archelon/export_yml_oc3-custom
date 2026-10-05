@@ -14,7 +14,7 @@ A custom fork of the stock OpenCart 3 (OC3) Yandex.Market YML feed extension, pa
 
 ## Multi-feed architecture
 
-- One row per feed in the table `oc_feed_yandex_market` (`DB_PREFIX . 'feed_yandex_market'`). Columns mirror the form fields plus `feed_id`, `date_added`, `date_modified`. `categories` stays a comma-separated string of category ids.
+- One row per feed in the table `oc_feed_yandex_market` (`DB_PREFIX . 'feed_yandex_market'`). Columns mirror the form fields plus `feed_id`, `date_added`, `date_modified`. `categories` stays a comma-separated string of category ids. `excluded_products` is a comma-separated list of product ids filtered out in the catalog model `getProduct()`.
 - Admin routes (controller `ControllerExtensionFeedYandexMarket`):
   - `extension/feed/yandex_market` → feed list (`yandex_market_list.twig`).
   - `.../add`, `.../edit&feed_id=N`, `.../copy`, `.../delete` → CRUD. Add/edit render `yandex_market.twig` and post a nested `feed[...]` array; the controller `implode`s `feed[categories]` before saving.

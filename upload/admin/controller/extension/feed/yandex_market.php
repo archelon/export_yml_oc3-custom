@@ -29,6 +29,9 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			$feed = $this->request->post['feed'];
 
 			$feed['categories'] = isset($feed['categories']) ? implode(',', $feed['categories']) : '';
+			$feed['excluded_products'] = $this->cleanProductIds(isset($feed['excluded_products']) ? $feed['excluded_products'] : '');
+
+			$this->model_export_yandex_market->installSchema();
 
 			$this->model_export_yandex_market->addFeed($feed);
 
@@ -51,6 +54,9 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			$feed = $this->request->post['feed'];
 
 			$feed['categories'] = isset($feed['categories']) ? implode(',', $feed['categories']) : '';
+			$feed['excluded_products'] = $this->cleanProductIds(isset($feed['excluded_products']) ? $feed['excluded_products'] : '');
+
+			$this->model_export_yandex_market->installSchema();
 
 			$this->model_export_yandex_market->editFeed($this->request->get['feed_id'], $feed);
 
@@ -226,7 +232,8 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			'attributes'    => 0,
 			'options'       => 0,
 			'description'   => 0,
-			'categories'    => array()
+			'categories'    => array(),
+			'excluded_products' => ''
 		);
 
 		$data['feed'] = array();
@@ -278,6 +285,13 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 		$data['footer'] = $this->load->controller('common/footer');
 
 		$this->response->setOutput($this->load->view('extension/feed/yandex_market', $data));
+	}
+
+	protected function cleanProductIds($value) {
+		// Оставляем только цифры и запятые, убираем пустые элементы.
+		$ids = array_filter(array_map('intval', preg_split('/[^0-9]+/', (string)$value)));
+
+		return implode(',', array_unique($ids));
 	}
 
 	protected function validateForm() {
