@@ -1,5 +1,11 @@
 <?php
 class ModelExportYandexMarket extends Model {
+	public function hasColumn($table, $column) {
+		$query = $this->db->query("SHOW COLUMNS FROM `" . DB_PREFIX . str_replace('`', '', $table) . "` LIKE '" . $this->db->escape($column) . "'");
+
+		return (bool)$query->num_rows;
+	}
+
 	public function installSchema() {
 		$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "feed_yandex_market` (
 			`feed_id` int(11) NOT NULL AUTO_INCREMENT,

@@ -313,9 +313,13 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			'mpn'          => $this->language->get('text_field_mpn'),
 			'location'     => $this->language->get('text_field_location'),
 			'manufacturer' => $this->language->get('text_field_manufacturer'),
-			'description'  => $this->language->get('text_field_description'),
-			'meta_color'   => $this->language->get('text_field_meta_color')
+			'description'  => $this->language->get('text_field_description')
 		);
+
+		// Нестандартная колонка meta_color доступна только при её наличии в БД.
+		if ($this->model_export_yandex_market->hasColumn('product_description', 'meta_color')) {
+			$data['product_fields']['meta_color'] = $this->language->get('text_field_meta_color');
+		}
 
 		$this->load->model('catalog/attribute');
 		$data['attributes'] = $this->model_catalog_attribute->getAttributes();

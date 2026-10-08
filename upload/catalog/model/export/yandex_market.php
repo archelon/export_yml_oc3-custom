@@ -1,5 +1,11 @@
 <?php
 class ModelExportYandexMarket extends Model {
+	public function hasColumn($table, $column) {
+		$query = $this->db->query("SHOW COLUMNS FROM `" . DB_PREFIX . str_replace('`', '', $table) . "` LIKE '" . $this->db->escape($column) . "'");
+
+		return (bool)$query->num_rows;
+	}
+
 	public function installSchema() {
 		$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "feed_yandex_market` (
 			`feed_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -68,7 +74,10 @@ class ModelExportYandexMarket extends Model {
 			}
 		}
 
-		$query = $this->db->query("SELECT p.*, pd.name, pd.description, pd.meta_color, m.name AS manufacturer, p2c.category_id, p.price AS price, (SELECT ps.price FROM " . DB_PREFIX . "product_special ps WHERE ps.product_id = p.product_id AND ps.customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' AND ((ps.date_start = '0000-00-00' OR ps.date_start < NOW()) AND (ps.date_end = '0000-00-00' OR ps.date_end > NOW())) ORDER BY ps.priority ASC, ps.price ASC LIMIT 1) AS special FROM " . DB_PREFIX . "product p JOIN " . DB_PREFIX . "product_to_category AS p2c ON (p.product_id = p2c.product_id) " . ($vendor_required ? '' : 'LEFT ') . "JOIN " . DB_PREFIX . "manufacturer m ON (p.manufacturer_id = m.manufacturer_id) LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) LEFT JOIN " . DB_PREFIX . "product_to_store p2s ON (p.product_id = p2s.product_id) WHERE p2c.category_id IN (" . $this->db->escape($allowed_categories) . ") AND p2s.store_id = '" . (int)$this->config->get('config_store_id') . "' AND pd.language_id = '" . (int)$this->config->get('config_language_id') . "' AND p.date_available <= NOW() AND p.status = '1' AND (p.quantity > '0' OR p.stock_status_id != '" . (int)$out_of_stock_id . "')" . $exclude_sql . " GROUP BY p.product_id");
+		// Колонка meta_color может отсутствовать на других установках — подставляем её только при наличии.
+		$meta_color = $this->hasColumn('product_description', 'meta_color') ? 'pd.meta_color, ' : '';
+
+		$query = $this->db->query("SELECT p.*, pd.name, pd.description, " . $meta_color . "m.name AS manufacturer, p2c.category_id, p.price AS price, (SELECT ps.price FROM " . DB_PREFIX . "product_special ps WHERE ps.product_id = p.product_id AND ps.customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "' AND ((ps.date_start = '0000-00-00' OR ps.date_start < NOW()) AND (ps.date_end = '0000-00-00' OR ps.date_end > NOW())) ORDER BY ps.priority ASC, ps.price ASC LIMIT 1) AS special FROM " . DB_PREFIX . "product p JOIN " . DB_PREFIX . "product_to_category AS p2c ON (p.product_id = p2c.product_id) " . ($vendor_required ? '' : 'LEFT ') . "JOIN " . DB_PREFIX . "manufacturer m ON (p.manufacturer_id = m.manufacturer_id) LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) LEFT JOIN " . DB_PREFIX . "product_to_store p2s ON (p.product_id = p2s.product_id) WHERE p2c.category_id IN (" . $this->db->escape($allowed_categories) . ") AND p2s.store_id = '" . (int)$this->config->get('config_store_id') . "' AND pd.language_id = '" . (int)$this->config->get('config_language_id') . "' AND p.date_available <= NOW() AND p.status = '1' AND (p.quantity > '0' OR p.stock_status_id != '" . (int)$out_of_stock_id . "')" . $exclude_sql . " GROUP BY p.product_id");
 
 		return $query->rows;
 	}

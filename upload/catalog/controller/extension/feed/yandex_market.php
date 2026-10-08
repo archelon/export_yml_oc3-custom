@@ -710,7 +710,7 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 		if (strpos($source, 'product:') === 0) {
 			$column = substr($source, 8);
 
-			if (isset($product[$column])) {
+			if (isset($product[$column]) && $product[$column] !== '') {
 				return $product[$column];
 			}
 		} elseif (strpos($source, 'attribute:') === 0) {
