@@ -36,6 +36,34 @@ $_['entry_sales_notes_help']       = 'Ex: Minimal order total $1000.';
 $_['entry_attributes']       = 'Attributes to param:';
 $_['entry_options']       = 'Options to param:';
 $_['entry_description']       = 'HTML Description:';
+
+// Field mapping
+$_['entry_field_map']       = 'Field mapping:';
+$_['entry_field_map_help']  = 'Choose the source of each feed field. "Default" keeps the extension standard behaviour.';
+$_['entry_map_name']        = 'Name:';
+$_['entry_map_vendor']      = 'Vendor:';
+$_['entry_map_vendor_code'] = 'Vendor code:';
+$_['entry_map_model']       = 'Model:';
+$_['entry_map_description'] = 'Description:';
+$_['text_field_yandex']     = 'Feed field';
+$_['text_field_source']     = 'Source';
+$_['text_field_default']    = 'Default';
+$_['text_field_group_product']   = 'Product fields';
+$_['text_field_group_attribute'] = 'Attributes';
+$_['text_field_group_option']    = 'Options';
+$_['text_field_name']         = 'Name';
+$_['text_field_model']        = 'Model';
+$_['text_field_sku']          = 'SKU';
+$_['text_field_upc']          = 'UPC';
+$_['text_field_ean']          = 'EAN';
+$_['text_field_jan']          = 'JAN';
+$_['text_field_isbn']         = 'ISBN';
+$_['text_field_mpn']          = 'MPN';
+$_['text_field_location']     = 'Location';
+$_['text_field_manufacturer'] = 'Manufacturer';
+$_['text_field_description']  = 'Description';
+$_['text_field_meta_color']   = 'Colour (meta_color)';
+
 // Error
 $_['error_permission']   = 'Permission Error!';
 $_['error_name']         = 'Feed name must be between 1 and 255 characters!';

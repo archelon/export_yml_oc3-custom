@@ -30,6 +30,9 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 
 			$feed['categories'] = isset($feed['categories']) ? implode(',', $feed['categories']) : '';
 			$feed['excluded_products'] = $this->cleanProductIds(isset($feed['excluded_products']) ? $feed['excluded_products'] : '');
+			$feed['field_map'] = $this->packFieldMap(isset($feed['map']) ? $feed['map'] : array());
+
+			unset($feed['map']);
 
 			$this->model_export_yandex_market->installSchema();
 
@@ -55,6 +58,9 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 
 			$feed['categories'] = isset($feed['categories']) ? implode(',', $feed['categories']) : '';
 			$feed['excluded_products'] = $this->cleanProductIds(isset($feed['excluded_products']) ? $feed['excluded_products'] : '');
+			$feed['field_map'] = $this->packFieldMap(isset($feed['map']) ? $feed['map'] : array());
+
+			unset($feed['map']);
 
 			$this->model_export_yandex_market->installSchema();
 
@@ -233,7 +239,8 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			'options'       => 0,
 			'description'   => 0,
 			'categories'    => array(),
-			'excluded_products' => ''
+			'excluded_products' => '',
+			'field_map'     => ''
 		);
 
 		$data['feed'] = array();
@@ -250,6 +257,12 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 
 		if (!is_array($data['feed']['categories'])) {
 			$data['feed']['categories'] = ($data['feed']['categories'] != '') ? explode(',', $data['feed']['categories']) : array();
+		}
+
+		if (isset($this->request->post['feed']['map']) && is_array($this->request->post['feed']['map'])) {
+			$data['feed']['map'] = array_merge($this->unpackFieldMap(''), $this->request->post['feed']['map']);
+		} else {
+			$data['feed']['map'] = $this->unpackFieldMap($data['feed']['field_map']);
 		}
 
 		$data['feed_id'] = isset($this->request->get['feed_id']) ? (int)$this->request->get['feed_id'] : 0;
@@ -280,6 +293,36 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 
 		$data['currencies'] = array_intersect_key($currencies, $allowed_currencies);
 
+		// Сопоставление YML-полей: какие поля настраиваются и какие источники доступны.
+		$data['mappable_fields'] = array(
+			'name'        => $this->language->get('entry_map_name'),
+			'vendor'      => $this->language->get('entry_map_vendor'),
+			'vendorCode'  => $this->language->get('entry_map_vendor_code'),
+			'model'       => $this->language->get('entry_map_model'),
+			'description' => $this->language->get('entry_map_description')
+		);
+
+		$data['product_fields'] = array(
+			'name'         => $this->language->get('text_field_name'),
+			'model'        => $this->language->get('text_field_model'),
+			'sku'          => $this->language->get('text_field_sku'),
+			'upc'          => $this->language->get('text_field_upc'),
+			'ean'          => $this->language->get('text_field_ean'),
+			'jan'          => $this->language->get('text_field_jan'),
+			'isbn'         => $this->language->get('text_field_isbn'),
+			'mpn'          => $this->language->get('text_field_mpn'),
+			'location'     => $this->language->get('text_field_location'),
+			'manufacturer' => $this->language->get('text_field_manufacturer'),
+			'description'  => $this->language->get('text_field_description'),
+			'meta_color'   => $this->language->get('text_field_meta_color')
+		);
+
+		$this->load->model('catalog/attribute');
+		$data['attributes'] = $this->model_catalog_attribute->getAttributes();
+
+		$this->load->model('catalog/option');
+		$data['options'] = $this->model_catalog_option->getOptions();
+
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
@@ -292,6 +335,56 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 		$ids = array_filter(array_map('intval', preg_split('/[^0-9]+/', (string)$value)));
 
 		return implode(',', array_unique($ids));
+	}
+
+	protected function packFieldMap($map) {
+		if (!is_array($map)) {
+			return '';
+		}
+
+		$allowed_fields = array('name', 'vendor', 'vendorCode', 'model', 'description');
+		$clean = array();
+
+		foreach ($allowed_fields as $field) {
+			$value = isset($map[$field]) ? trim((string)$map[$field]) : '';
+
+			if ($value !== '' && !preg_match('/^(product:[a-z0-9_]+|attribute:[0-9]+|option:[0-9]+)$/i', $value)) {
+				$value = '';
+			}
+
+			if ($value !== '') {
+				$clean[$field] = $value;
+			}
+		}
+
+		if (!$clean) {
+			return '';
+		}
+
+		return json_encode($clean);
+	}
+
+	protected function unpackFieldMap($value) {
+		$allowed_fields = array('name', 'vendor', 'vendorCode', 'model', 'description');
+		$map = array();
+
+		foreach ($allowed_fields as $field) {
+			$map[$field] = '';
+		}
+
+		if (is_string($value) && $value !== '') {
+			$decoded = json_decode($value, true);
+
+			if (is_array($decoded)) {
+				foreach ($allowed_fields as $field) {
+					if (isset($decoded[$field]) && is_string($decoded[$field])) {
+						$map[$field] = $decoded[$field];
+					}
+				}
+			}
+		}
+
+		return $map;
 	}
 
 	protected function validateForm() {

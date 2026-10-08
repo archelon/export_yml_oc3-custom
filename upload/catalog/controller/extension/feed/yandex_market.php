@@ -5,6 +5,9 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 	private $categories = array();
 	private $offers = array();
 	private $feed = array();
+	private $field_map = array();
+	private $attribute_cache = array();
+	private $option_cache = array();
 	private $from_charset = 'utf-8';
 	private $eol = "\n";
 
@@ -24,6 +27,7 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 
 		if ($feed_info) {
 			$this->feed = $feed_info;
+			$this->field_map = $this->decodeFieldMap($feed_info);
 
 			if (!($allowed_categories = $feed_info['categories'])) exit();
 
@@ -102,11 +106,11 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 				$data['categoryId'] = $product['category_id'];
 				$data['delivery'] = 'true';
 
-				$data['name'] = $product['name'];
-				$data['vendor'] = $product['manufacturer'];
-				$data['vendorCode'] = $product['sku'];
-				$data['model'] = $product['model'];
-				$data['description'] = $product['description'];
+				$data['name'] = $this->resolveMappedField($product, 'name', $product['name']);
+				$data['vendor'] = $this->resolveMappedField($product, 'vendor', $product['manufacturer']);
+				$data['vendorCode'] = $this->resolveMappedField($product, 'vendorCode', $product['sku']);
+				$data['model'] = $this->resolveMappedField($product, 'model', $product['model']);
+				$data['description'] = $this->resolveMappedField($product, 'description', $product['description']);
 
 				$data['instock'] = $product['quantity'];
 
@@ -676,6 +680,94 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 		} else {
 			return $field;
 		}
+	}
+
+	/**
+	 * Сопоставление полей товарного предложения с источниками данных
+	 */
+
+	private function decodeFieldMap($feed) {
+		if (empty($feed['field_map'])) {
+			return array();
+		}
+
+		$decoded = json_decode($feed['field_map'], true);
+
+		return is_array($decoded) ? $decoded : array();
+	}
+
+	/**
+	 * Возвращает значение поля предложения с учётом карты сопоставления.
+	 * Если источник не задан или значение пустое — возвращается значение по умолчанию.
+	 */
+	private function resolveMappedField($product, $field, $default) {
+		if (empty($this->field_map[$field])) {
+			return $default;
+		}
+
+		$source = $this->field_map[$field];
+
+		if (strpos($source, 'product:') === 0) {
+			$column = substr($source, 8);
+
+			if (isset($product[$column])) {
+				return $product[$column];
+			}
+		} elseif (strpos($source, 'attribute:') === 0) {
+			$value = $this->getProductAttributeValue($product['product_id'], (int)substr($source, 10));
+
+			if ($value !== '') {
+				return $value;
+			}
+		} elseif (strpos($source, 'option:') === 0) {
+			$value = $this->getProductOptionValue($product['product_id'], (int)substr($source, 7));
+
+			if ($value !== '') {
+				return $value;
+			}
+		}
+
+		return $default;
+	}
+
+	private function getProductAttributeValue($product_id, $attribute_id) {
+		if (!isset($this->attribute_cache[$product_id])) {
+			$this->attribute_cache[$product_id] = array();
+
+			$attribute_groups = $this->model_catalog_product->getProductAttributes($product_id);
+
+			if ($attribute_groups) {
+				foreach ($attribute_groups as $attribute_group) {
+					foreach ($attribute_group['attribute'] as $attribute) {
+						$this->attribute_cache[$product_id][(int)$attribute['attribute_id']] = $attribute['text'];
+					}
+				}
+			}
+		}
+
+		return isset($this->attribute_cache[$product_id][$attribute_id]) ? $this->attribute_cache[$product_id][$attribute_id] : '';
+	}
+
+	private function getProductOptionValue($product_id, $option_id) {
+		if (!isset($this->option_cache[$product_id])) {
+			$this->option_cache[$product_id] = array();
+
+			$options = $this->model_catalog_product->getProductOptions($product_id);
+
+			if ($options) {
+				foreach ($options as $option) {
+					if (in_array($option['type'], array('radio', 'checkbox', 'select'))) {
+						foreach ($option['product_option_value'] as $option_value) {
+							if (!isset($this->option_cache[$product_id][(int)$option['option_id']]) && (!$option_value['subtract'] || ($option_value['quantity'] > 0))) {
+								$this->option_cache[$product_id][(int)$option['option_id']] = $option_value['name'];
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return isset($this->option_cache[$product_id][$option_id]) ? $this->option_cache[$product_id][$option_id] : '';
 	}
 
 	protected function getPath($category_id, $current_path = '') {

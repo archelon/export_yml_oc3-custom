@@ -37,6 +37,33 @@ $_['entry_attributes']       = 'Выгрузка атрибутов в offer>par
 $_['entry_options']       = 'Выгрузка опций в offer>param:';
 $_['entry_description']       = 'Описание с HTML-разметкой:';
 
+// Field mapping
+$_['entry_field_map']       = 'Сопоставление полей:';
+$_['entry_field_map_help']  = 'Выберите, откуда брать значение для каждого поля фида. «По умолчанию» — стандартное поведение расширения.';
+$_['entry_map_name']        = 'Название (name):';
+$_['entry_map_vendor']      = 'Производитель (vendor):';
+$_['entry_map_vendor_code'] = 'Код производителя (vendorCode):';
+$_['entry_map_model']       = 'Модель (model):';
+$_['entry_map_description'] = 'Описание (description):';
+$_['text_field_yandex']     = 'Поле фида';
+$_['text_field_source']     = 'Источник';
+$_['text_field_default']    = 'По умолчанию';
+$_['text_field_group_product']   = 'Поля товара';
+$_['text_field_group_attribute'] = 'Атрибуты';
+$_['text_field_group_option']    = 'Опции';
+$_['text_field_name']         = 'Название';
+$_['text_field_model']        = 'Модель';
+$_['text_field_sku']          = 'Артикул (SKU)';
+$_['text_field_upc']          = 'UPC';
+$_['text_field_ean']          = 'EAN';
+$_['text_field_jan']          = 'JAN';
+$_['text_field_isbn']         = 'ISBN';
+$_['text_field_mpn']          = 'MPN';
+$_['text_field_location']     = 'Расположение';
+$_['text_field_manufacturer'] = 'Производитель';
+$_['text_field_description']  = 'Описание';
+$_['text_field_meta_color']   = 'Цвет (meta_color)';
+
 // Error
 $_['error_permission']   = 'У Вас нет доступа для управления модулем Экспорт в YML для Яндекс.Маркет!';
 $_['error_name']         = 'Название фида должно быть от 1 до 255 символов!';

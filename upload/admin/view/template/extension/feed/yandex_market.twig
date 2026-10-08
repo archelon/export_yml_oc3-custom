@@ -190,6 +190,48 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="col-sm-2 control-label"><span data-toggle="tooltip" title="{{ entry_field_map_help }}">{{ entry_field_map }}</span></label>
+            <div class="col-sm-10">
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                  <thead>
+                    <tr>
+                      <td class="text-left">{{ text_field_yandex }}</td>
+                      <td class="text-left">{{ text_field_source }}</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for field, field_label in mappable_fields %}
+                    <tr>
+                      <td class="text-left">{{ field_label }}</td>
+                      <td class="text-left">
+                        <select name="feed[map][{{ field }}]" class="form-control">
+                          <option value="">{{ text_field_default }}</option>
+                          <optgroup label="{{ text_field_group_product }}">
+                            {% for pkey, plabel in product_fields %}
+                            <option value="product:{{ pkey }}"{% if feed.map[field] == ('product:' ~ pkey) %} selected="selected"{% endif %}>{{ plabel }}</option>
+                            {% endfor %}
+                          </optgroup>
+                          <optgroup label="{{ text_field_group_attribute }}">
+                            {% for attribute in attributes %}
+                            <option value="attribute:{{ attribute.attribute_id }}"{% if feed.map[field] == ('attribute:' ~ attribute.attribute_id) %} selected="selected"{% endif %}>{{ attribute.name }}</option>
+                            {% endfor %}
+                          </optgroup>
+                          <optgroup label="{{ text_field_group_option }}">
+                            {% for option in options %}
+                            <option value="option:{{ option.option_id }}"{% if feed.map[field] == ('option:' ~ option.option_id) %} selected="selected"{% endif %}>{{ option.name }}</option>
+                            {% endfor %}
+                          </optgroup>
+                        </select>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
             <label class="col-sm-2 control-label" for="input-data-feed">{{ entry_data_feed }}</label>
             <div class="col-sm-10">
               {% if feed_url %}
