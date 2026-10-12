@@ -238,6 +238,7 @@ class ControllerExtensionFeedYandexMarket extends Controller {
 			'attributes'    => 0,
 			'options'       => 0,
 			'description'   => 0,
+			'exclude_noindex' => 1,
 			'categories'    => array(),
 			'excluded_products' => '',
 			'field_map'     => ''

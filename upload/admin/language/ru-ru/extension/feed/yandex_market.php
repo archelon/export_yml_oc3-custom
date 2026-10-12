@@ -23,6 +23,8 @@ $_['entry_company']      = 'Компания:';
 $_['entry_category']     = 'Категории:';
 $_['entry_excluded_products']     = 'Исключить товары (ID):';
 $_['entry_excluded_products_help']     = 'ID товаров через запятую, которые не попадут в фид. Например: 12, 34, 56';
+$_['entry_exclude_noindex']     = 'Исключить товары с отключённой индексацией (noindex):';
+$_['entry_exclude_noindex_help']     = 'Не выгружать в фид товары, у которых отключена индексация (Индексация = Отключено).';
 $_['entry_currency']     = 'Валюта товаров:';
 $_['entry_in_stock']     = 'Статус в наличии:';
 $_['entry_out_of_stock'] = 'Статус нет в наличии:';

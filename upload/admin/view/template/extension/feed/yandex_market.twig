@@ -110,6 +110,13 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="col-sm-2 control-label"><span data-toggle="tooltip" title="{{ entry_exclude_noindex_help }}">{{ entry_exclude_noindex }}</span></label>
+            <div class="col-sm-10">
+              <label class="radio-inline"><input type="radio" name="feed[exclude_noindex]" value="1" {% if feed.exclude_noindex %} checked="checked"{% endif %}> {{ text_yes }}</label>
+              <label class="radio-inline"><input type="radio" name="feed[exclude_noindex]" value="0" {% if not feed.exclude_noindex %} checked="checked"{% endif %}> {{ text_no }}</label>
+            </div>
+          </div>
+          <div class="form-group">
             <label class="col-sm-2 control-label" for="input-in-stock">{{ entry_in_stock }}</label>
             <div class="col-sm-10">
               <select name="feed[in_stock]" id="input-in-stock" class="form-control">

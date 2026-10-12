@@ -22,6 +22,7 @@ class ModelExportYandexMarket extends Model {
 			`attributes` tinyint(1) NOT NULL DEFAULT '0',
 			`options` tinyint(1) NOT NULL DEFAULT '0',
 			`description` tinyint(1) NOT NULL DEFAULT '0',
+			`exclude_noindex` tinyint(1) NOT NULL DEFAULT '1',
 			`categories` text NOT NULL,
 			`excluded_products` text NOT NULL,
 			`field_map` text NOT NULL,
@@ -41,6 +42,12 @@ class ModelExportYandexMarket extends Model {
 
 		if (!$query->num_rows) {
 			$this->db->query("ALTER TABLE `" . DB_PREFIX . "feed_yandex_market` ADD `field_map` text NOT NULL AFTER `excluded_products`");
+		}
+
+		$query = $this->db->query("SHOW COLUMNS FROM `" . DB_PREFIX . "feed_yandex_market` LIKE 'exclude_noindex'");
+
+		if (!$query->num_rows) {
+			$this->db->query("ALTER TABLE `" . DB_PREFIX . "feed_yandex_market` ADD `exclude_noindex` tinyint(1) NOT NULL DEFAULT '1' AFTER `description`");
 		}
 	}
 
@@ -72,7 +79,8 @@ class ModelExportYandexMarket extends Model {
 			'sales_notes'   => '',
 			'attributes'    => 0,
 			'options'       => 0,
-			'description'   => 0
+			'description'   => 0,
+			'exclude_noindex' => 1
 		);
 
 		$data = array();
@@ -125,6 +133,7 @@ class ModelExportYandexMarket extends Model {
 			`attributes` = '" . (isset($data['attributes']) ? (int)$data['attributes'] : 0) . "',
 			`options` = '" . (isset($data['options']) ? (int)$data['options'] : 0) . "',
 			`description` = '" . (isset($data['description']) ? (int)$data['description'] : 0) . "',
+			`exclude_noindex` = '" . (isset($data['exclude_noindex']) ? (int)$data['exclude_noindex'] : 0) . "',
 			`categories` = '" . $this->db->escape($data['categories']) . "',
 			`excluded_products` = '" . $this->db->escape(isset($data['excluded_products']) ? $data['excluded_products'] : '') . "',
 			`field_map` = '" . $this->db->escape(isset($data['field_map']) ? $data['field_map'] : '') . "',
@@ -149,6 +158,7 @@ class ModelExportYandexMarket extends Model {
 			`attributes` = '" . (isset($data['attributes']) ? (int)$data['attributes'] : 0) . "',
 			`options` = '" . (isset($data['options']) ? (int)$data['options'] : 0) . "',
 			`description` = '" . (isset($data['description']) ? (int)$data['description'] : 0) . "',
+			`exclude_noindex` = '" . (isset($data['exclude_noindex']) ? (int)$data['exclude_noindex'] : 0) . "',
 			`categories` = '" . $this->db->escape($data['categories']) . "',
 			`excluded_products` = '" . $this->db->escape(isset($data['excluded_products']) ? $data['excluded_products'] : '') . "',
 			`field_map` = '" . $this->db->escape(isset($data['field_map']) ? $data['field_map'] : '') . "',

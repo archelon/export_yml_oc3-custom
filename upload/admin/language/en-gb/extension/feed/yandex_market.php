@@ -23,6 +23,8 @@ $_['entry_company']      = 'Company name:';
 $_['entry_category']     = 'Categories:';
 $_['entry_excluded_products']     = 'Excluded products (IDs):';
 $_['entry_excluded_products_help']     = 'Comma-separated product IDs to exclude from the feed. E.g. 12, 34, 56';
+$_['entry_exclude_noindex']     = 'Exclude noindex products:';
+$_['entry_exclude_noindex_help']     = 'Do not export products whose indexing is disabled (Indexing = Disabled).';
 $_['entry_currency']     = 'Currency:';
 $_['entry_in_stock']     = 'Status "in stock":';
 $_['entry_out_of_stock'] = 'Status "out of stock":';
